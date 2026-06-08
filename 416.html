@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dados e Informações </title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; background: #F0F4FF; min-height: 100vh; padding: 1rem; }
+  .wrap { max-width: 780px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #FF6B9D 0%, #FFB347 55%, #4ECDC4 100%);
+    border-radius: 20px; padding: 1.5rem 2rem; text-align: center; margin-bottom: 1.25rem;
+    box-shadow: 0 4px 20px rgba(255,107,157,0.3);
+  }
+  .header h1 { color: #fff; font-size: 24px; font-weight: 800; text-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+  .header p  { color: rgba(255,255,255,0.92); font-size: 13px; margin-top: 5px; }
+
+  /* PROGRESS BAR */
+  .score-bar {
+    display: flex; align-items: center; gap: 12px;
+    background: #fff; border: 2px solid #e0e0e0; border-radius: 50px;
+    padding: 8px 20px; margin-bottom: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+  .score-label { font-size: 13px; color: #666; font-weight: 600; white-space: nowrap; }
+  .progress { flex: 1; height: 12px; background: #f0f0f0; border-radius: 10px; overflow: hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg, #4ECDC4, #45B7D1); border-radius: 10px; transition: width 0.5s ease; width: 0%; }
+  .score-val { font-size: 20px; font-weight: 800; color: #FF6B9D; white-space: nowrap; }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-size: 14px; font-weight: 700; color: #444;
+    margin-bottom: 10px; padding-left: 8px;
+    border-left: 4px solid #FF6B9D;
+  }
+
+  /* CONCEPT CARDS */
+  .concepts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+  .concept-card { border-radius: 16px; padding: 1rem; text-align: center; }
+  .concept-card.dado { background: #FFF3E0; border: 2px solid #FFB347; }
+  .concept-card.info { background: #E8F5E9; border: 2px solid #66BB6A; }
+  .concept-card .img-wrap {
+    width: 72px; height: 72px; margin: 0 auto 10px;
+    border-radius: 12px; overflow: hidden;
+  }
+  .concept-card .img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .concept-card h3 { font-size: 16px; font-weight: 800; margin-bottom: 5px; }
+  .concept-card.dado h3 { color: #E65100; }
+  .concept-card.info h3 { color: #2E7D32; }
+  .concept-card p { font-size: 12px; color: #555; line-height: 1.5; }
+
+  /* QUESTION */
+  .q-section {
+    background: #fff; border: 1.5px solid #e8e8e8; border-radius: 18px;
+    padding: 1.25rem; margin-bottom: 1rem;
+    transition: border-color 0.3s, background 0.3s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .q-section.correct { border-color: #66BB6A; background: #F1F9F2; }
+  .q-section.wrong   { border-color: #EF5350; background: #FDF4F4; }
+  .q-num {
+    display: inline-block; background: #FF6B9D; color: #fff;
+    font-size: 11px; font-weight: 700; padding: 2px 10px;
+    border-radius: 20px; margin-bottom: 8px;
+  }
+  .q-img-wrap {
+    width: 100%; height: 130px; border-radius: 12px; overflow: hidden;
+    margin-bottom: 10px; background: #f0f0f0;
+  }
+  .q-img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .q-text { font-size: 14px; font-weight: 600; color: #333; margin-bottom: 10px; line-height: 1.5; }
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .opt-btn {
+    background: #f5f5f5; border: 1.5px solid #ddd; border-radius: 10px;
+    padding: 9px 10px; font-size: 13px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; color: #333;
+  }
+  .opt-btn:hover:not(:disabled) { background: #E3F2FD; border-color: #42A5F5; color: #0D47A1; }
+  .opt-btn.selected-correct { background: #E8F5E9; border-color: #66BB6A; color: #1B5E20; }
+  .opt-btn.selected-wrong   { background: #FFEBEE; border-color: #EF5350; color: #B71C1C; }
+  .opt-btn.reveal-correct   { background: #E8F5E9; border-color: #66BB6A; color: #1B5E20; }
+  .opt-btn:disabled { cursor: not-allowed; opacity: 0.85; }
+  .feedback {
+    margin-top: 8px; font-size: 12px; font-weight: 600;
+    padding: 6px 10px; border-radius: 8px; display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.ok  { background: #E8F5E9; color: #2E7D32; }
+  .feedback.nok { background: #FFEBEE; color: #C62828; }
+
+  /* DRAG SECTION */
+  .drag-section {
+    background: #fff; border: 1.5px solid #e8e8e8; border-radius: 18px;
+    padding: 1.25rem; margin-bottom: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .drag-hint { font-size: 13px; color: #555; margin-bottom: 10px; }
+  .drag-items { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; min-height: 44px; }
+  .drag-item {
+    background: #E3F2FD; border: 1.5px solid #90CAF9; color: #0D47A1;
+    border-radius: 24px; padding: 7px 16px; font-size: 13px; font-weight: 700;
+    cursor: pointer; user-select: none; transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .drag-item:hover { transform: scale(1.04); box-shadow: 0 2px 8px rgba(66,165,245,0.3); }
+  .drag-item.selected-drag { outline: 3px solid #FF6B9D; transform: scale(1.05); }
+  .drag-item.used { opacity: 0.35; cursor: not-allowed; pointer-events: none; }
+  .drop-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .drop-zone {
+    border: 2px dashed #ccc; border-radius: 14px;
+    min-height: 90px; padding: 10px; transition: all 0.2s; cursor: pointer;
+  }
+  .drop-zone:hover { transform: scale(1.01); }
+  .drop-zone.dado-zone { border-color: #FFB347; background: #FFFDE7; }
+  .drop-zone.info-zone { border-color: #66BB6A; background: #F1F8E9; }
+  .drop-zone h4 { font-size: 13px; font-weight: 800; margin-bottom: 8px; text-align: center; }
+  .dado-zone h4 { color: #E65100; }
+  .info-zone h4 { color: #2E7D32; }
+  .dropped-item {
+    display: inline-block; border-radius: 16px;
+    padding: 4px 12px; font-size: 12px; font-weight: 700; margin: 3px;
+  }
+  .dado-zone .dropped-item { background: #FFE0B2; color: #BF360C; border: 1px solid #FFCC80; }
+  .info-zone .dropped-item { background: #DCEDC8; color: #33691E; border: 1px solid #AED581; }
+  #drag-feedback {
+    margin-top: 10px; font-size: 13px; font-weight: 700;
+    padding: 8px 12px; border-radius: 10px; display: none;
+  }
+
+  /* FINAL BUTTON */
+  .final-btn {
+    width: 100%; background: linear-gradient(135deg, #FF6B9D, #FFB347);
+    color: #fff; border: none; border-radius: 14px;
+    padding: 14px; font-size: 17px; font-weight: 800;
+    cursor: pointer; margin-top: 0.5rem; letter-spacing: 0.4px;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .final-btn:hover  { opacity: 0.9; }
+  .final-btn:active { transform: scale(0.98); }
+
+  /* RESULT */
+  .result-panel {
+    display: none; border-radius: 18px; padding: 1.75rem;
+    text-align: center; color: #fff; margin-top: 1rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 6px 24px rgba(102,126,234,0.4);
+  }
+  .result-panel.show { display: block; }
+  .result-big   { font-size: 60px; font-weight: 900; line-height: 1; }
+  .result-label { font-size: 14px; opacity: 0.85; margin-top: 4px; }
+  .result-msg   { font-size: 17px; font-weight: 700; margin-top: 14px; }
+  .result-detail{ font-size: 13px; opacity: 0.85; margin-top: 6px; line-height: 1.5; }
+  .stars        { font-size: 32px; margin: 12px 0; letter-spacing: 4px; }
+
+  /* FOOTER */
+  .footer {
+    text-align: center; padding: 16px 0 8px;
+    font-size: 12px; color: #999; border-top: 1px solid #ddd; margin-top: 1.5rem;
+  }
+  .footer span { font-weight: 700; color: #777; }
+
+  @media (max-width: 500px) {
+    .concepts, .options, .drop-cols { grid-template-columns: 1fr; }
+    .header h1 { font-size: 19px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <h1>🖥️ Dados e Informações</h1>
+ 
+  </div>
+
+  <div class="score-bar">
+    <span class="score-label">Progresso</span>
+    <div class="progress"><div class="progress-fill" id="prog"></div></div>
+    <span class="score-val" id="pts">0 / 10</span>
+  </div>
+
+  <!-- CONCEITOS -->
+  <div class="section-title">📚 Relembre os conceitos</div>
+  <div class="concepts">
+    <div class="concept-card dado">
+      <div class="img-wrap">
+        <img src="https://images.unsplash.com/photo-1518770660439-4636190af475?w=150&h=150&fit=crop" alt="circuito eletrônico" />
+      </div>
+      <h3>Dado</h3>
+      <p>Qualquer coisa <strong>bruta</strong>, solta, sem significado — como o número <strong>10</strong>, a letra <strong>A</strong> ou uma cor isolada.</p>
+    </div>
+    <div class="concept-card info">
+      <div class="img-wrap">
+        <img src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=150&h=150&fit=crop" alt="estudante lendo" />
+      </div>
+      <h3>Informação</h3>
+      <p>Dados <strong>organizados</strong> que fazem sentido — como <strong>"10 anos de idade"</strong> ou <strong>"temperatura de 25°C"</strong>.</p>
+    </div>
+  </div>
+
+  <!-- PARTE 1 -->
+  <div class="section-title" style="margin-bottom:10px">🎯 Parte 1 — Dado ou Informação? <span style="font-weight:400;color:#888">(5 pontos)</span></div>
+
+  <div id="q1" class="q-section">
+    <span class="q-num">Questão 1</span>
+    <div class="q-img-wrap">
+      <img src="https://images.unsplash.com/photo-1502581827181-9cf3c3ee0106?w=800&h=260&fit=crop" alt="número sete escrito" />
+    </div>
+    <p class="q-text">O número <strong>"7"</strong> escrito num papel, sozinho, sem nenhuma explicação.</p>
+    <div class="options">
+      <button class="opt-btn" onclick="answer(1,'dado',this)">🔢 Dado</button>
+      <button class="opt-btn" onclick="answer(1,'info',this)">💡 Informação</button>
+    </div>
+    <div class="feedback" id="fb1"></div>
+  </div>
+
+  <div id="q2" class="q-section">
+    <span class="q-num">Questão 2</span>
+    <div class="q-img-wrap">
+      <img src="https://images.unsplash.com/photo-1530103862676-de8c9debad1d?w=800&h=260&fit=crop" alt="bolo de aniversário" />
+    </div>
+    <p class="q-text">A frase: <strong>"Hoje é meu aniversário de 9 anos!"</strong></p>
+    <div class="options">
+      <button class="opt-btn" onclick="answer(2,'dado',this)">🔢 Dado</button>
+      <button class="opt-btn" onclick="answer(2,'info',this)">💡 Informação</button>
+    </div>
+    <div class="feedback" id="fb2"></div>
+  </div>
+
+  <div id="q3" class="q-section">
+    <span class="q-num">Questão 3</span>
+    <div class="q-img-wrap">
+      <img src="https://images.unsplash.com/photo-1464983953574-0892a716854b?w=800&h=260&fit=crop" alt="termômetro" />
+    </div>
+    <p class="q-text">O termômetro mostra apenas <strong>"30"</strong>, sem unidade ou contexto nenhum.</p>
+    <div class="options">
+      <button class="opt-btn" onclick="answer(3,'dado',this)">🔢 Dado</button>
+      <button class="opt-btn" onclick="answer(3,'info',this)">💡 Informação</button>
+    </div>
+    <div class="feedback" id="fb3"></div>
+  </div>
+
+  <div id="q4" class="q-section">
+    <span class="q-num">Questão 4</span>
+    <div class="q-img-wrap">
+      <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=260&fit=crop" alt="refeição cantina" />
+    </div>
+    <p class="q-text">A frase: <strong>"O almoço está custando R$ 15,00 na cantina da escola."</strong></p>
+    <div class="options">
+      <button class="opt-btn" onclick="answer(4,'dado',this)">🔢 Dado</button>
+      <button class="opt-btn" onclick="answer(4,'info',this)">💡 Informação</button>
+    </div>
+    <div class="feedback" id="fb4"></div>
+  </div>
+
+  <div id="q5" class="q-section">
+    <span class="q-num">Questão 5</span>
+    <div class="q-img-wrap">
+      <img src="https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&h=260&fit=crop" alt="teclado de computador" />
+    </div>
+    <p class="q-text">A letra <strong>"A"</strong> digitada sozinha no teclado, sem nenhuma palavra ao redor.</p>
+    <div class="options">
+      <button class="opt-btn" onclick="answer(5,'dado',this)">🔢 Dado</button>
+      <button class="opt-btn" onclick="answer(5,'info',this)">💡 Informação</button>
+    </div>
+    <div class="feedback" id="fb5"></div>
+  </div>
+
+  <!-- PARTE 2 -->
+  <div class="section-title" style="margin-top:1.5rem; margin-bottom:10px">🗂️ Parte 2 — Classifique clicando! <span style="font-weight:400;color:#888">(5 pontos)</span></div>
+  <div class="drag-section">
+    <p class="drag-hint">1. Clique num cartão azul para selecioná-lo. 2. Depois clique na caixa correta abaixo.</p>
+    <div class="drag-items" id="drag-pool"></div>
+    <div class="drop-cols">
+      <div class="drop-zone dado-zone" id="zona-dado" onclick="dropTo('dado')">
+        <h4>🔢 DADO</h4>
+        <div id="dado-content"></div>
+      </div>
+      <div class="drop-zone info-zone" id="zona-info" onclick="dropTo('info')">
+        <h4>💡 INFORMAÇÃO</h4>
+        <div id="info-content"></div>
+      </div>
+    </div>
+    <div id="drag-feedback"></div>
+  </div>
+
+  <button class="final-btn" id="finalBtn" onclick="showResult()">✅ Ver minha nota final</button>
+
+  <div class="result-panel" id="resultPanel">
+    <div class="result-big" id="nota">—</div>
+    <div class="result-label">de 10 pontos</div>
+    <div class="stars" id="stars">⭐</div>
+    <div class="result-msg" id="msg">—</div>
+    <div class="result-detail" id="detail">—</div>
+  </div>
+
+  <div class="footer">
+    <span>Atividade Pedagógica — Profª Adriana Bett Terebinto</span>
+  </div>
+</div>
+
+<script>
+const correct = { 1:'dado', 2:'info', 3:'dado', 4:'info', 5:'dado' };
+const explanations = {
+  1: { ok:'✅ Certo! "7" sozinho é um dado bruto — não sabemos o que representa.', nok:'❌ Não é bem isso. "7" sem contexto é apenas um dado bruto!' },
+  2: { ok:'✅ Perfeito! A frase tem contexto e significado — é uma informação!', nok:'❌ Revise! A frase tem contexto e significado, então é uma informação.' },
+  3: { ok:'✅ Ótimo! "30" sem unidade nem contexto é só um dado solto.', nok:'❌ Atenção! Sem unidade ou explicação, "30" é apenas um dado bruto.' },
+  4: { ok:'✅ Excelente! Com preço, local e contexto a frase é uma informação!', nok:'❌ Revise! Com preço, local e contexto, a frase é uma informação.' },
+  5: { ok:'✅ Isso mesmo! Uma letra solta é um dado, sem significado próprio.', nok:'❌ Pense de novo! Uma letra solta, sem contexto, é um dado bruto.' },
+};
+
+let mcScore = 0;
+let answered = {};
+
+function answer(q, resp, btn) {
+  if (answered[q]) return;
+  answered[q] = true;
+  const allBtns = btn.parentElement.querySelectorAll('.opt-btn');
+  allBtns.forEach(b => b.disabled = true);
+  const fb  = document.getElementById('fb' + q);
+  const qEl = document.getElementById('q'  + q);
+  if (resp === correct[q]) {
+    btn.classList.add('selected-correct');
+    fb.textContent = explanations[q].ok;
+    fb.className = 'feedback show ok';
+    qEl.classList.add('correct');
+    mcScore++;
+  } else {
+    btn.classList.add('selected-wrong');
+    allBtns.forEach(b => {
+      if (b.textContent.includes(correct[q] === 'dado' ? 'Dado' : 'Informação'))
+        b.classList.add('reveal-correct');
+    });
+    fb.textContent = explanations[q].nok;
+    fb.className = 'feedback show nok';
+    qEl.classList.add('wrong');
+  }
+  updateProgress();
+}
+
+const dragData = [
+  { id:'i1', text:'"15"',              correct:'dado' },
+  { id:'i2', text:'"Ana tem 8 anos"',  correct:'info' },
+  { id:'i3', text:'Cor azul',          correct:'dado' },
+  { id:'i4', text:'"Escola fica a 2km"', correct:'info' },
+  { id:'i5', text:'"Z"',               correct:'dado' },
+];
+let dragScored = false;
+let placed = {};
+let selected = null;
+
+function buildDrag() {
+  const pool = document.getElementById('drag-pool');
+  dragData.forEach(d => {
+    const el = document.createElement('button');
+    el.className = 'drag-item';
+    el.id = 'drag-' + d.id;
+    el.textContent = d.text;
+    el.onclick = () => pickItem(d);
+    pool.appendChild(el);
+  });
+}
+
+function pickItem(d) {
+  if (dragScored) return;
+  const el = document.getElementById('drag-' + d.id);
+  if (el.classList.contains('used')) return;
+  if (selected && selected.id === d.id) {
+    selected = null;
+    el.classList.remove('selected-drag');
+    return;
+  }
+  if (selected) {
+    document.getElementById('drag-' + selected.id).classList.remove('selected-drag');
+  }
+  selected = d;
+  el.classList.add('selected-drag');
+}
+
+function dropTo(zone) {
+  if (!selected || dragScored) return;
+  const zoneId = zone === 'dado' ? 'dado-content' : 'info-content';
+  const cont = document.getElementById(zoneId);
+  const tag = document.createElement('span');
+  tag.className = 'dropped-item';
+  tag.textContent = selected.text;
+  cont.appendChild(tag);
+  placed[selected.id] = zone;
+  const selEl = document.getElementById('drag-' + selected.id);
+  selEl.classList.add('used');
+  selEl.classList.remove('selected-drag');
+  selected = null;
+  if (Object.keys(placed).length === dragData.length) scoreDrag();
+}
+
+function scoreDrag() {
+  dragScored = true;
+  let pts = 0;
+  dragData.forEach(d => { if (placed[d.id] === d.correct) pts++; });
+  const fb = document.getElementById('drag-feedback');
+  fb.style.display = 'block';
+  fb.textContent = `Você acertou ${pts} de ${dragData.length} na classificação! (+${pts} ponto${pts !== 1 ? 's' : ''})`;
+  fb.style.color      = pts >= 3 ? '#2E7D32' : '#C62828';
+  fb.style.background = pts >= 3 ? '#E8F5E9' : '#FFEBEE';
+  fb.style.padding    = '8px 12px';
+  fb.style.borderRadius = '8px';
+  window._dragPts = pts;
+  updateProgress();
+}
+
+function updateProgress() {
+  const steps = Object.keys(answered).length + (dragScored ? 1 : 0);
+  document.getElementById('prog').style.width = (steps / 6 * 100) + '%';
+}
+
+function showResult() {
+  const dragPts = window._dragPts !== undefined ? window._dragPts : 0;
+  const total = Math.min(10, mcScore + dragPts);
+  document.getElementById('nota').textContent = total.toFixed(1);
+  document.getElementById('pts').textContent  = total.toFixed(1) + ' / 10';
+  document.getElementById('stars').textContent = total >= 9 ? '⭐⭐⭐' : total >= 6 ? '⭐⭐' : '⭐';
+  let msg, detail;
+  if      (total >= 9) { msg = '🎉 Incrível! Você dominou o conteúdo!';    detail = 'Você entende muito bem a diferença entre dado e informação. Parabéns!'; }
+  else if (total >= 7) { msg = '😊 Muito bem! Continue assim!';             detail = 'Ótimo desempenho! Revise os pontos que errou e você vai arrasar!'; }
+  else if (total >= 5) { msg = '🙂 Bom esforço! Vamos revisar?';            detail = 'Você está no caminho certo! Releia os conceitos com atenção.'; }
+  else                 { msg = '📖 Continue estudando, você consegue!';     detail = 'Não desanime! Releia o texto e tente novamente.'; }
+  document.getElementById('msg').textContent    = msg;
+  document.getElementById('detail').textContent = detail;
+  document.getElementById('resultPanel').classList.add('show');
+  const btn = document.getElementById('finalBtn');
+  btn.textContent = '🔄 Refazer atividade';
+  btn.onclick = () => location.reload();
+  document.getElementById('resultPanel').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+buildDrag();
+</script>
+</body>
+</html>
